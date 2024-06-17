@@ -143,3 +143,4 @@ perfectmove_env
 *.prototxt
 pose_iter_440000.caffemodel
 *.mp4
+converter.py

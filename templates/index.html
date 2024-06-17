@@ -1,13 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Video Streams</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dancer Pose Detection</title>
 </head>
 <body>
-    <h1>Video Stream 1</h1>
-    <img src="{{ url_for('video_feed1') }}" width="500" />
-
-    <h1>Video Stream 2</h1>
-    <img src="{{ url_for('video_feed2') }}" width="500" />
+    <h1>Dancer Pose Detection</h1>
+    <img id="pose_img" src="{{ url_for('video_feed') }}" alt="Pose Detection">
 </body>
 </html>
