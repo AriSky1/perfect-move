@@ -20,6 +20,9 @@
             max-width: 1200px;
             margin: 20px auto;
         }
+        .video-container > div {
+            margin-bottom: 20px;
+        }
         img {
             width: 100%;
             max-width: 600px;
@@ -32,10 +35,13 @@
     <h1>Pose Detection Streams</h1>
     <div class="video-container">
         <div>
-            <h2>Video Stream</h2>
-            <img src="{{ url_for('video_feed') }}" id="videoStream" alt="Video Stream" />
+            <h2>Recorded Video Stream</h2>
+            <img src="{{ url_for('video_feed') }}" id="videoStream" alt="Recorded Video Stream" />
         </div>
-
+        <div>
+            <h2>Webcam Stream</h2>
+            <img src="{{ url_for('webcam_feed') }}" id="webcamStream" alt="Webcam Stream" />
+        </div>
     </div>
 </body>
 </html>
