@@ -2,11 +2,40 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dancer Pose Detection</title>
+    <title>Pose Detection Stream</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .video-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+        img {
+            width: 100%;
+            max-width: 600px;
+            border: 2px solid #000;
+            border-radius: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Dancer Pose Detection</h1>
-    <img id="pose_img" src="{{ url_for('video_feed') }}" alt="Pose Detection">
+    <h1>Pose Detection Streams</h1>
+    <div class="video-container">
+        <div>
+            <h2>Video Stream</h2>
+            <img src="{{ url_for('video_feed') }}" id="videoStream" alt="Video Stream" />
+        </div>
+
+    </div>
 </body>
 </html>

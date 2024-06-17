@@ -10,11 +10,14 @@ pose = mp_pose.Pose()
 
 # Load the video
 video_path = 'video.mp4'
-cap = cv2.VideoCapture(video_path)
+cap_video = cv2.VideoCapture(video_path)
 
-def detect_pose():
-    while cap.isOpened():
-        ret, frame = cap.read()
+# Initialize webcam capture
+cap_webcam = cv2.VideoCapture(0)  # Use 0 for the first webcam, 1 for the second, etc.
+
+def detect_pose_video():
+    while cap_video.isOpened():
+        ret, frame = cap_video.read()
         if not ret:
             break
 
@@ -39,13 +42,17 @@ def detect_pose():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
+
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(detect_pose(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(detect_pose_video(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 if __name__ == '__main__':
     app.run(debug=True)
