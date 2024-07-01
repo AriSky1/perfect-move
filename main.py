@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, Response
 import cv2
 import mediapipe as mp
@@ -8,11 +7,9 @@ import numpy as np
 
 app = Flask(__name__)
 
-
 mp_pose = mp.solutions.pose
 pose_video = mp_pose.Pose()
 pose_webcam = mp_pose.Pose()
-
 
 video_path = 'video.mp4'
 cap_video = cv2.VideoCapture(video_path)
@@ -22,8 +19,11 @@ cap_webcam = cv2.VideoCapture(0)  # Use 0 for the first webcam, 1 for the second
 executor_video = ThreadPoolExecutor(max_workers=2)
 executor_webcam = ThreadPoolExecutor(max_workers=2)
 
+# Store angles for comparison
+angle_comparisons = []
+
 # Function to read and process frames asynchronously
-def read_and_process_frames(video_capture, executor, pose_model):
+def read_and_process_frames(video_capture, executor, pose_model, stream_type):
     while True:
         ret, frame = video_capture.read()
         if not ret:
@@ -31,10 +31,10 @@ def read_and_process_frames(video_capture, executor, pose_model):
         # Resize frame to improve processing speed
         frame_resized = cv2.resize(frame, (640, 480))
         # Submit pose detection task to executor
-        future = executor.submit(detect_pose, frame_resized.copy(), pose_model)
+        future = executor.submit(detect_pose, frame_resized.copy(), pose_model, stream_type)
         yield future.result()
 
-def detect_pose(frame, pose_model):
+def detect_pose(frame, pose_model, stream_type):
     image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     results = pose_model.process(image)
@@ -43,41 +43,47 @@ def detect_pose(frame, pose_model):
         landmarks = results.pose_landmarks.landmark
 
         connections = [
-                       (mp_pose.PoseLandmark.LEFT_SHOULDER, mp_pose.PoseLandmark.RIGHT_SHOULDER),
-                       (mp_pose.PoseLandmark.LEFT_SHOULDER, mp_pose.PoseLandmark.LEFT_ELBOW),
-                       (mp_pose.PoseLandmark.LEFT_ELBOW, mp_pose.PoseLandmark.LEFT_WRIST),
-                       (mp_pose.PoseLandmark.RIGHT_SHOULDER, mp_pose.PoseLandmark.RIGHT_ELBOW),
-                       (mp_pose.PoseLandmark.RIGHT_ELBOW, mp_pose.PoseLandmark.RIGHT_WRIST),
-                       (mp_pose.PoseLandmark.LEFT_SHOULDER, mp_pose.PoseLandmark.LEFT_HIP),
-                       (mp_pose.PoseLandmark.RIGHT_SHOULDER, mp_pose.PoseLandmark.RIGHT_HIP),
-                       (mp_pose.PoseLandmark.LEFT_HIP, mp_pose.PoseLandmark.RIGHT_HIP),
-                       (mp_pose.PoseLandmark.LEFT_HIP, mp_pose.PoseLandmark.LEFT_KNEE),
-                       (mp_pose.PoseLandmark.LEFT_KNEE, mp_pose.PoseLandmark.LEFT_ANKLE),
-                       (mp_pose.PoseLandmark.RIGHT_HIP, mp_pose.PoseLandmark.RIGHT_KNEE),
-                       (mp_pose.PoseLandmark.RIGHT_KNEE, mp_pose.PoseLandmark.RIGHT_ANKLE),
+            (mp_pose.PoseLandmark.LEFT_SHOULDER, mp_pose.PoseLandmark.LEFT_ELBOW, mp_pose.PoseLandmark.LEFT_WRIST),
+            (mp_pose.PoseLandmark.RIGHT_SHOULDER, mp_pose.PoseLandmark.RIGHT_ELBOW, mp_pose.PoseLandmark.RIGHT_WRIST),
+            (mp_pose.PoseLandmark.LEFT_HIP, mp_pose.PoseLandmark.LEFT_KNEE, mp_pose.PoseLandmark.LEFT_ANKLE),
+            (mp_pose.PoseLandmark.RIGHT_HIP, mp_pose.PoseLandmark.RIGHT_KNEE, mp_pose.PoseLandmark.RIGHT_ANKLE)
+        ]
 
-                       ]
+        angles = {}
 
         for connection in connections:
-            joint1 = connection[0]
-            joint2 = connection[1]
+            joint1, joint2, joint3 = connection
 
-            if landmarks[joint1].visibility > 0.5 and landmarks[joint2].visibility > 0.5:
-                joint1_x = int(landmarks[joint1].x * frame.shape[1])
-                joint1_y = int(landmarks[joint1].y * frame.shape[0])
-                joint2_x = int(landmarks[joint2].x * frame.shape[1])
-                joint2_y = int(landmarks[joint2].y * frame.shape[0])
+            if landmarks[joint1].visibility > 0.5 and landmarks[joint2].visibility > 0.5 and landmarks[joint3].visibility > 0.5:
+                # Calculate the vectors
+                vec1 = np.array([landmarks[joint1].x - landmarks[joint2].x, landmarks[joint1].y - landmarks[joint2].y])
+                vec2 = np.array([landmarks[joint3].x - landmarks[joint2].x, landmarks[joint3].y - landmarks[joint2].y])
 
-                cv2.line(frame, (joint1_x, joint1_y), (joint2_x, joint2_y), (0, 255, 0), 3)
+                # Calculate the angle between vectors
+                angle = np.arccos(np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2)))
+                angle = np.degrees(angle)
+
+                # Store the angle with joint names
+                angles[f'{joint1.name}-{joint2.name}-{joint3.name}'] = angle
+
+                # Draw connections
+                joint1_pos = (int(landmarks[joint1].x * frame.shape[1]), int(landmarks[joint1].y * frame.shape[0]))
+                joint2_pos = (int(landmarks[joint2].x * frame.shape[1]), int(landmarks[joint2].y * frame.shape[0]))
+                joint3_pos = (int(landmarks[joint3].x * frame.shape[1]), int(landmarks[joint3].y * frame.shape[0]))
+
+                cv2.line(frame, joint1_pos, joint2_pos, (255, 255, 255), 6)
+                cv2.line(frame, joint2_pos, joint3_pos, (255, 255, 255), 6)
+                cv2.circle(frame, joint1_pos, 10, (255, 255, 255), -1)
+                cv2.circle(frame, joint2_pos, 8, (255, 255, 255), -1)
+                cv2.circle(frame, joint3_pos, 6, (255, 255, 255), -1)
+
+        # Store the angles for comparison
+        angle_comparisons.append((stream_type, angles))
 
     return frame
 
-
-
-
-
-def generate_feed(video_capture, executor, pose_model):
-    for frame in read_and_process_frames(video_capture, executor, pose_model):
+def generate_feed(video_capture, executor, pose_model, stream_type):
+    for frame in read_and_process_frames(video_capture, executor, pose_model, stream_type):
         ret, buffer = cv2.imencode('.jpg', frame)
         if not ret:
             continue
@@ -87,22 +93,17 @@ def generate_feed(video_capture, executor, pose_model):
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(generate_feed(cap_video, executor_video, pose_video),
+    return Response(generate_feed(cap_video, executor_video, pose_video, 'video'),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/webcam_feed')
 def webcam_feed():
-    return Response(generate_feed(cap_webcam, executor_webcam, pose_webcam),
+    return Response(generate_feed(cap_webcam, executor_webcam, pose_webcam, 'webcam'),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
-
 
 @app.route('/')
 def index():
-    return render_template('index.html')
-
+    return render_template('index.html', angle_comparisons=angle_comparisons)
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
