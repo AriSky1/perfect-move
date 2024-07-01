@@ -2,7 +2,7 @@ from pytube import YouTube
 import os
 
 # YouTube video URL
-video_url = 'https://www.youtube.com/watch?v=RbRBfR1Iz-4'
+video_url = 'https://www.youtube.com/watch?v=CBkVrEF8HmQ'
 
 # Download YouTube video
 yt = YouTube(video_url)
@@ -11,7 +11,7 @@ video.download()
 
 # Rename the downloaded file to video.mp4
 default_filename = video.default_filename
-new_filename = 'video.mp4'
+new_filename = 'video2.mp4'
 
 # Check if file exists and rename
 if os.path.exists(default_filename):

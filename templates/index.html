@@ -2,16 +2,26 @@
 <html>
 <head>
     <title>Video Streams</title>
+    <style>
+        .stream-container {
+            display: flex;
+        }
+        .stream-container div {
+            margin-right: 20px;
+        }
+    </style>
 </head>
 <body>
     <h1>Video Streams</h1>
-    <div>
-        <h2>Video File Stream</h2>
-        <img src="{{ url_for('video_feed') }}">
-    </div>
-    <div>
-        <h2>Webcam Stream</h2>
-        <img src="{{ url_for('webcam_feed') }}">
+    <div class="stream-container">
+        <div>
+            <h2>Video File Stream</h2>
+            <img src="{{ url_for('video_feed') }}">
+        </div>
+        <div>
+            <h2>Webcam Stream</h2>
+            <img src="{{ url_for('webcam_feed') }}">
+        </div>
     </div>
 </body>
 </html>
