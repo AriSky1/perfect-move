@@ -1,47 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Pose Detection Stream</title>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-        .video-container {
-            display: flex;
-            justify-content: space-around;
-            width: 100%;
-            max-width: 1200px;
-            margin: 20px auto;
-        }
-        .video-container > div {
-            margin-bottom: 20px;
-        }
-        img {
-            width: 100%;
-            max-width: 600px;
-            border: 2px solid #000;
-            border-radius: 10px;
-        }
-    </style>
+    <title>Video Streams</title>
 </head>
 <body>
-    <h1>Pose Detection Streams</h1>
-    <div class="video-container">
-        <div>
-            <h2>Recorded Video Stream</h2>
-            <img src="{{ url_for('video_feed') }}" id="videoStream" alt="Recorded Video Stream" />
-        </div>
-        <div>
-            <h2>Webcam Stream</h2>
-            <img src="{{ url_for('webcam_feed') }}" id="webcamStream" alt="Webcam Stream" />
-        </div>
+    <h1>Video Streams</h1>
+    <div>
+        <h2>Video File Stream</h2>
+        <img src="{{ url_for('video_feed') }}">
+    </div>
+    <div>
+        <h2>Webcam Stream</h2>
+        <img src="{{ url_for('webcam_feed') }}">
     </div>
 </body>
 </html>
