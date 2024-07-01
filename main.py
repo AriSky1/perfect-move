@@ -68,8 +68,7 @@ def detect_pose(frame, pose_model):
                        (mp_pose.PoseLandmark.LEFT_KNEE, mp_pose.PoseLandmark.LEFT_ANKLE),
                        (mp_pose.PoseLandmark.RIGHT_HIP, mp_pose.PoseLandmark.RIGHT_KNEE),
                        (mp_pose.PoseLandmark.RIGHT_KNEE, mp_pose.PoseLandmark.RIGHT_ANKLE),
-                       (mp_pose.PoseLandmark.LEFT_SHOULDER, mp_pose.PoseLandmark.LEFT_WRIST),
-                       (mp_pose.PoseLandmark.RIGHT_SHOULDER, mp_pose.PoseLandmark.RIGHT_WRIST)
+
                        ]
 
         # Draw each connection
@@ -134,7 +133,6 @@ def index():
 # Run the Flask application
 if __name__ == '__main__':
     app.run(debug=True)
-
 
 
 
