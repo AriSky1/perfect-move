@@ -4,7 +4,6 @@ import mediapipe as mp
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 
-
 app = Flask(__name__)
 
 mp_pose = mp.solutions.pose
@@ -20,7 +19,7 @@ executor_video = ThreadPoolExecutor(max_workers=2)
 executor_webcam = ThreadPoolExecutor(max_workers=2)
 
 # Store angles for comparison
-angle_comparisons = []
+angle_comparisons = {'video': {}, 'webcam': {}}
 
 # Function to read and process frames asynchronously
 def read_and_process_frames(video_capture, executor, pose_model, stream_type):
@@ -28,11 +27,17 @@ def read_and_process_frames(video_capture, executor, pose_model, stream_type):
         ret, frame = video_capture.read()
         if not ret:
             break
+
+        # Horizontally flip the frame
+        frame = cv2.flip(frame, 1)  # 1 for horizontal flip
+
         # Resize frame to improve processing speed
         frame_resized = cv2.resize(frame, (640, 480))
+
         # Submit pose detection task to executor
         future = executor.submit(detect_pose, frame_resized.copy(), pose_model, stream_type)
         yield future.result()
+
 
 def detect_pose(frame, pose_model, stream_type):
     image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -66,19 +71,34 @@ def detect_pose(frame, pose_model, stream_type):
                 # Store the angle with joint names
                 angles[f'{joint1.name}-{joint2.name}-{joint3.name}'] = angle
 
-                # Draw connections
+        # Store the angles for comparison
+        angle_comparisons[stream_type] = angles
+
+        # Compare angles between video and webcam streams
+        other_stream_type = 'webcam' if stream_type == 'video' else 'video'
+        if angle_comparisons[other_stream_type]:
+            for connection in connections:
+                joint1, joint2, joint3 = connection
+                joint_name = f'{joint1.name}-{joint2.name}-{joint3.name}'
+
+                if joint_name in angles and joint_name in angle_comparisons[other_stream_type]:
+                    if abs(angles[joint_name] - angle_comparisons[other_stream_type][joint_name]) <= 10:
+                        color = (0, 255, 0)  # Green
+                    else:
+                        color = (255, 255, 255)  # White
+                else:
+                    color = (255, 255, 255)  # White
+
+                # Draw connections with the respective color
                 joint1_pos = (int(landmarks[joint1].x * frame.shape[1]), int(landmarks[joint1].y * frame.shape[0]))
                 joint2_pos = (int(landmarks[joint2].x * frame.shape[1]), int(landmarks[joint2].y * frame.shape[0]))
                 joint3_pos = (int(landmarks[joint3].x * frame.shape[1]), int(landmarks[joint3].y * frame.shape[0]))
 
-                cv2.line(frame, joint1_pos, joint2_pos, (255, 255, 255), 6)
-                cv2.line(frame, joint2_pos, joint3_pos, (255, 255, 255), 6)
-                cv2.circle(frame, joint1_pos, 10, (255, 255, 255), -1)
-                cv2.circle(frame, joint2_pos, 8, (255, 255, 255), -1)
-                cv2.circle(frame, joint3_pos, 6, (255, 255, 255), -1)
-
-        # Store the angles for comparison
-        angle_comparisons.append((stream_type, angles))
+                cv2.line(frame, joint1_pos, joint2_pos, color, 6)
+                cv2.line(frame, joint2_pos, joint3_pos, color, 6)
+                cv2.circle(frame, joint1_pos, 10, color, -1)
+                cv2.circle(frame, joint2_pos, 8, color, -1)
+                cv2.circle(frame, joint3_pos, 6, color, -1)
 
     return frame
 

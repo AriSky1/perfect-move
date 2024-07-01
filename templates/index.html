@@ -27,18 +27,6 @@
             <img src="{{ url_for('webcam_feed') }}">
         </div>
     </div>
-    <div class="angle-comparisons">
-        <h2>Angle Comparisons</h2>
-        {% for comparison in angle_comparisons %}
-            <div class="angle-comparison">
-                <h3>{{ comparison[0] }} Stream</h3>
-                <ul>
-                    {% for joints, angle in comparison[1].items() %}
-                        <li>{{ joints }}: {{ angle }} degrees</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endfor %}
-    </div>
+
 </body>
 </html>
