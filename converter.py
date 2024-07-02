@@ -2,7 +2,8 @@ from pytube import YouTube
 import os
 
 # YouTube video URL
-video_url = 'https://www.youtube.com/watch?v=CBkVrEF8HmQ'
+#video_url = 'https://www.youtube.com/watch?v=QTuCHmq1Vm4' #money lalisa girl1
+video_url = 'https://www.youtube.com/watch?v=TJyRtucJGuQ' #money lalisa girl2
 
 # Download YouTube video
 yt = YouTube(video_url)

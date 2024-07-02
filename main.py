@@ -3,6 +3,7 @@ import cv2
 import mediapipe as mp
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
+import time
 
 app = Flask(__name__)
 
@@ -21,8 +22,9 @@ executor_webcam = ThreadPoolExecutor(max_workers=2)
 # Store angles for comparison
 angle_comparisons = {'video': {}, 'webcam': {}}
 
+
 # Function to read and process frames asynchronously
-def read_and_process_frames(video_capture, executor, pose_model, stream_type):
+def read_and_process_frames(video_capture, executor, pose_model, stream_type, slow_down=False):
     while True:
         ret, frame = video_capture.read()
         if not ret:
@@ -36,7 +38,13 @@ def read_and_process_frames(video_capture, executor, pose_model, stream_type):
 
         # Submit pose detection task to executor
         future = executor.submit(detect_pose, frame_resized.copy(), pose_model, stream_type)
+
+        # Slow down the frame processing for video stream
+        if slow_down:
+            time.sleep(0.10)  # Adding a delay of 40ms to slow down by 50%
+
         yield future.result()
+
 
 def detect_pose(frame, pose_model, stream_type):
     image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -58,7 +66,8 @@ def detect_pose(frame, pose_model, stream_type):
         for connection in connections:
             joint1, joint2, joint3 = connection
 
-            if landmarks[joint1].visibility > 0.5 and landmarks[joint2].visibility > 0.5 and landmarks[joint3].visibility > 0.5:
+            if landmarks[joint1].visibility > 0.5 and landmarks[joint2].visibility > 0.5 and landmarks[
+                joint3].visibility > 0.5:
                 # Calculate the vectors
                 vec1 = np.array([landmarks[joint1].x - landmarks[joint2].x, landmarks[joint1].y - landmarks[joint2].y])
                 vec2 = np.array([landmarks[joint3].x - landmarks[joint2].x, landmarks[joint3].y - landmarks[joint2].y])
@@ -86,8 +95,10 @@ def detect_pose(frame, pose_model, stream_type):
 
                 if joint_name in angles and joint_name in angle_comparisons[other_stream_type]:
                     angle_diff = abs(angles[joint_name][0] - angle_comparisons[other_stream_type][joint_name][0])
-                    direction_diff1 = np.linalg.norm(angles[joint_name][1] - angle_comparisons[other_stream_type][joint_name][1])
-                    direction_diff2 = np.linalg.norm(angles[joint_name][2] - angle_comparisons[other_stream_type][joint_name][2])
+                    direction_diff1 = np.linalg.norm(
+                        angles[joint_name][1] - angle_comparisons[other_stream_type][joint_name][1])
+                    direction_diff2 = np.linalg.norm(
+                        angles[joint_name][2] - angle_comparisons[other_stream_type][joint_name][2])
 
                     if angle_diff <= 10 and direction_diff1 <= 0.1 and direction_diff2 <= 0.1:
                         color = (0, 255, 0)  # Green
@@ -109,8 +120,9 @@ def detect_pose(frame, pose_model, stream_type):
 
     return frame
 
-def generate_feed(video_capture, executor, pose_model, stream_type):
-    for frame in read_and_process_frames(video_capture, executor, pose_model, stream_type):
+
+def generate_feed(video_capture, executor, pose_model, stream_type, slow_down=False):
+    for frame in read_and_process_frames(video_capture, executor, pose_model, stream_type, slow_down):
         ret, buffer = cv2.imencode('.jpg', frame)
         if not ret:
             continue
@@ -118,19 +130,23 @@ def generate_feed(video_capture, executor, pose_model, stream_type):
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
+
 @app.route('/video_feed')
 def video_feed():
-    return Response(generate_feed(cap_video, executor_video, pose_video, 'video'),
+    return Response(generate_feed(cap_video, executor_video, pose_video, 'video', slow_down=True),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 @app.route('/webcam_feed')
 def webcam_feed():
     return Response(generate_feed(cap_webcam, executor_webcam, pose_webcam, 'webcam'),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
+
 @app.route('/')
 def index():
     return render_template('index.html', angle_comparisons=angle_comparisons)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
