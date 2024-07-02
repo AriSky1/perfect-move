@@ -1,3 +1,4 @@
+import pygame
 from flask import Flask, render_template, Response
 import cv2
 import mediapipe as mp
@@ -133,7 +134,7 @@ def generate_feed(video_capture, executor, pose_model, stream_type, slow_down=Fa
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(generate_feed(cap_video, executor_video, pose_video, 'video', slow_down=True),
+    return Response(generate_feed(cap_video, executor_video, pose_video, 'video', slow_down=False),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
@@ -145,6 +146,11 @@ def webcam_feed():
 
 @app.route('/')
 def index():
+    pygame.mixer.init()
+
+    # Load and play the audio file
+    pygame.mixer.music.load('audio.mp3')
+    pygame.mixer.music.play()
     return render_template('index.html', angle_comparisons=angle_comparisons)
 
 
