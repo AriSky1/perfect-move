@@ -38,7 +38,6 @@ def read_and_process_frames(video_capture, executor, pose_model, stream_type):
         future = executor.submit(detect_pose, frame_resized.copy(), pose_model, stream_type)
         yield future.result()
 
-
 def detect_pose(frame, pose_model, stream_type):
     image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
@@ -68,8 +67,12 @@ def detect_pose(frame, pose_model, stream_type):
                 angle = np.arccos(np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2)))
                 angle = np.degrees(angle)
 
-                # Store the angle with joint names
-                angles[f'{joint1.name}-{joint2.name}-{joint3.name}'] = angle
+                # Calculate the direction (normalize vectors)
+                direction1 = vec1 / np.linalg.norm(vec1)
+                direction2 = vec2 / np.linalg.norm(vec2)
+
+                # Store the angle and direction with joint names
+                angles[f'{joint1.name}-{joint2.name}-{joint3.name}'] = (angle, direction1, direction2)
 
         # Store the angles for comparison
         angle_comparisons[stream_type] = angles
@@ -82,7 +85,11 @@ def detect_pose(frame, pose_model, stream_type):
                 joint_name = f'{joint1.name}-{joint2.name}-{joint3.name}'
 
                 if joint_name in angles and joint_name in angle_comparisons[other_stream_type]:
-                    if abs(angles[joint_name] - angle_comparisons[other_stream_type][joint_name]) <= 10:
+                    angle_diff = abs(angles[joint_name][0] - angle_comparisons[other_stream_type][joint_name][0])
+                    direction_diff1 = np.linalg.norm(angles[joint_name][1] - angle_comparisons[other_stream_type][joint_name][1])
+                    direction_diff2 = np.linalg.norm(angles[joint_name][2] - angle_comparisons[other_stream_type][joint_name][2])
+
+                    if angle_diff <= 10 and direction_diff1 <= 0.1 and direction_diff2 <= 0.1:
                         color = (0, 255, 0)  # Green
                     else:
                         color = (255, 255, 255)  # White
