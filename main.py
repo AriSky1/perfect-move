@@ -12,7 +12,7 @@ mp_pose = mp.solutions.pose
 pose_video = mp_pose.Pose()
 pose_webcam = mp_pose.Pose()
 
-video_path = 'video.mp4'
+video_path = 'video_x4_1.mp4'
 cap_video = cv2.VideoCapture(video_path)
 cap_webcam = cv2.VideoCapture(0)  # Use 0 for the first webcam, 1 for the second, etc.
 
@@ -29,10 +29,11 @@ def read_and_process_frames(video_capture, executor, pose_model, stream_type, sl
     while True:
         ret, frame = video_capture.read()
         if not ret:
-            break
-
+            video_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            continue
         # Horizontally flip the frame
-        frame = cv2.flip(frame, 1)  # 1 for horizontal flip
+        if stream_type == 'webcam':
+            frame = cv2.flip(frame, 1)  # 1 for horizontal flip
 
         # Resize frame to improve processing speed
         frame_resized = cv2.resize(frame, (640, 480))
@@ -146,11 +147,6 @@ def webcam_feed():
 
 @app.route('/')
 def index():
-    pygame.mixer.init()
-
-    # Load and play the audio file
-    pygame.mixer.music.load('audio.mp3')
-    pygame.mixer.music.play()
     return render_template('index.html', angle_comparisons=angle_comparisons)
 
 
