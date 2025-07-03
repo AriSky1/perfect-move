@@ -7,7 +7,7 @@ from flask import Flask, render_template, Response
 from pytube import YouTube
 from concurrent.futures import ThreadPoolExecutor
 
-# --- Download YouTube Video ---
+# --- Download YouTube Video --
 video_url = "https://www.youtube.com/watch?v=fs7Qb23LEjM&t=12s"
 yt = YouTube(video_url)
 video = yt.streams.filter(file_extension='mp4').first()
