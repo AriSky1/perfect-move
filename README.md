@@ -1,5 +1,6 @@
 # perfect-move
-![Perfect Move Demo](perfect_move.png)
+![Perfect Move Demo](perfect_move.png)<br>
+
 **perfect-move** is an application that allows users to load a dance video from YouTube and try to reproduce the dance in front of a camera. Using OpenCV and MediaPipe’s pose estimation (a technique for real-time human pose detection), it analyzes limb movements and shows how accurately each limb matches the original dance.
 
 ---
